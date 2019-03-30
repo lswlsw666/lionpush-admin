@@ -13,8 +13,19 @@ class Msg extends Controller {
         if ($user){
             $messages = Db::name('messages')->where(array('uid'=>$user['user_id']))->order('id desc')->select();
             if ($messages){
-                foreach ($messages as $key => &$message){
-                    
+                foreach ($messages as &$message){
+                    foreach ($message as $key => &$item){
+                        if ($key == 'm_invest_money'){
+                            switch ($item){
+                                case 'a' : $item = '1万以下';break;
+                                case 'b' : $item = '1~5万';break;
+                                case 'c' : $item = '5~10万';break;
+                                case 'd' : $item = '10~20万';break;
+                                case 'e' : $item = '20~50万';break;
+                                case 'f' : $item = '50万以上';break;
+                            }
+                        }
+                    }
                 }
             }
         }
