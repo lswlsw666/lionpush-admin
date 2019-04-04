@@ -25,6 +25,15 @@ class Msg extends Controller {
                                 case 'f' : $item = '50万以上';break;
                             }
                         }
+                        if ($key == 'add_time'){
+                            $item = date('Y-m-d H:i:s',$item);
+                        }
+                        if ($key == 'm_pics'){
+                            $pic = explode(',',$item);
+//                            $item = 'http://localhost:8080/public'.DS.'uploads/'.$pic[0];
+                            $item = 'http://www.lionpush.com/'.DS.'uploads/'.$pic[0];
+//                            $item = ROOT_PATH.'public'.DS.'uploads'.$pic[0];
+                        }
                     }
                 }
             }
