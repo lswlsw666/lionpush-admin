@@ -1,17 +1,20 @@
 <?php
 namespace app\member\controller;
-use think\Controller;
 use think\Db;
 
-class Msg extends Controller {
-    public function index(){
+class Msg extends MCommon {
+    protected $user = false;
+    public function _initialize()
+    {
         $user_token = htmlspecialchars($_POST['user_token'],ENT_QUOTES);
-        $user = Db::name('user_token')->where(array('token'=>$user_token))->field("user_id")->find();
-        if (!session('user_id') || $user['user_id'] != session('user_id')){
+        $this->user = $this->getUser($user_token);
+        if (!session('user_id') || $this->user['user_id'] != session('user_id')){
             echo json_encode(array('code'=>40001,'msg'=>'用户登录状态有误!'));die;
         }
-        if ($user){
-            $messages = Db::name('messages')->where(array('uid'=>$user['user_id']))->order('id desc')->select();
+    }
+    public function index(){
+        if ($this->user){
+            $messages = Db::name('messages')->where(array('uid'=>$this->user['user_id']))->order('id desc')->select();
             if ($messages){
                 foreach ($messages as &$message){
                     foreach ($message as $key => &$item){
@@ -30,9 +33,7 @@ class Msg extends Controller {
                         }
                         if ($key == 'm_pics'){
                             $pic = explode(',',$item);
-//                            $item = 'http://localhost:8080/public'.DS.'uploads/'.$pic[0];
                             $item = 'http://www.lionpush.com/'.DS.'uploads/'.$pic[0];
-//                            $item = ROOT_PATH.'public'.DS.'uploads'.$pic[0];
                         }
                     }
                 }
@@ -40,6 +41,10 @@ class Msg extends Controller {
         }
         echo json_encode(array('code'=>40000,'data'=>$messages));die;
     }
+
+    /**
+     * 上传图片
+     */
     public function uploadPic(){
         $file =request()->file("files");
         $info = $file->validate(['size'=>5242880,'ext'=>'jpg,png,gif'])->move(ROOT_PATH.'public'.DS.'uploads');
@@ -52,6 +57,13 @@ class Msg extends Controller {
             $this->error('上传失败！');
         }
     }
+
+    /**
+     * 发布消息
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\ModelNotFoundException
+     * @throws \think\exception\DbException
+     */
     public function pushNews(){
         $params = input('post.');
         if ($params){
@@ -78,5 +90,28 @@ class Msg extends Controller {
             }
         }
         echo json_encode(array('code'=>40001,'msg'=>'发布失败!'));
+    }
+
+    /**
+     * 编辑消息
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\ModelNotFoundException
+     * @throws \think\exception\DbException
+     */
+    public function editNews(){
+        $news_id = htmlspecialchars($_POST['id'],ENT_QUOTES);
+        $news_infos = Db::name('messages')->field('id,m_title,m_service,m_kind,m_area,m_invest_money,m_brand_name,m_company,m_description,m_pics,m_weixin,m_contactuser,m_tel')->where(array('id'=>$news_id,'uid'=>$this->user['user_id']))->find();
+        if ($news_infos){
+            foreach ($news_infos as $key => &$info){
+                if ($key == 'm_pics'){
+                    $info = explode(',',$info);
+                    foreach ($info as &$pic){
+                        $pic = 'http://www.lionpush.com'.DS.'uploads/'.$pic;
+                    }
+                }
+            }
+            echo json_encode(array('code'=>40000,'data'=>$news_infos));die;
+        }
+        echo json_encode(array('code'=>40001,'msg'=>'编辑失败!'));
     }
 }
