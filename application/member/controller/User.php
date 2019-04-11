@@ -111,5 +111,22 @@ class User{
             echo json_encode(array('code'=>40001,'msg'=>'帐号状态异常!'));
         }
     }
+
+    public function carFee(){
+        $sum = 0;
+        $money_orign = 10;
+        for ($i=1;$i<=24;$i++){
+            $money = $money_orign;
+            if ($sum > 100 && $sum < 150){
+                $money = $money_orign * 0.8;
+            }
+            if ($sum > 150){
+                $money = $money_orign * 0.5;
+            }
+            $sum += $money;
+        }
+        echo "<meta http-equiv='Content-Type'' content='text/html; charset=utf-8'>";
+        echo '车费：'. $sum;die;
+    }
 }
 

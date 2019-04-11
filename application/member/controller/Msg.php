@@ -1,12 +1,15 @@
 <?php
 namespace app\member\controller;
 use think\Db;
+use think\Request;
 
 class Msg extends MCommon {
     protected $user = false;
     public function _initialize()
     {
-        $user_token = htmlspecialchars($_POST['user_token'],ENT_QUOTES);
+        $token = Request::instance()->header('authorization');
+        $user_token = explode(' ',$token);
+        $user_token = $user_token[1];
         $this->user = $this->getUser($user_token);
         if (!session('user_id') || $this->user['user_id'] != session('user_id')){
             echo json_encode(array('code'=>40001,'msg'=>'用户登录状态有误!'));die;
@@ -70,15 +73,7 @@ class Msg extends MCommon {
             $insertData = array();
             foreach ($params as $key => &$param){
                 $param = htmlspecialchars($param,ENT_COMPAT);
-                if ($key == 'u_token'){
-                    $user = Db::name('user_token')->field('user_id')->where(array('token'=>$param))->find();
-                    if (!$user || $user['user_id'] != session('user_id')){
-                        session(null);
-                        echo json_encode(array('code'=>40001,'msg'=>'用户登录状态有误!'));die;
-                    }
-                } else {
-                    $insertData['m_'.$key] = $param;
-                }
+                $insertData['m_'.$key] = $param;
             }
             if ($insertData){
                 $insertData['add_time'] = time();
@@ -100,14 +95,24 @@ class Msg extends MCommon {
      */
     public function editNews(){
         $news_id = htmlspecialchars($_POST['id'],ENT_QUOTES);
-        $news_infos = Db::name('messages')->field('id,m_title,m_service,m_kind,m_area,m_invest_money,m_brand_name,m_company,m_description,m_pics,m_weixin,m_contactuser,m_tel')->where(array('id'=>$news_id,'uid'=>$this->user['user_id']))->find();
+        $news_infos = Db::name('messages')->field('id,m_title,m_service,m_kind,m_area,m_invest_money,m_brand_name,m_company,m_description,m_pics,m_weixin,m_contactuser,m_tel,m_service_id,m_city_id,m_province_id')->where(array('id'=>$news_id,'uid'=>$this->user['user_id']))->find();
         if ($news_infos){
             foreach ($news_infos as $key => &$info){
                 if ($key == 'm_pics'){
                     $info = explode(',',$info);
-                    foreach ($info as &$pic){
+                    foreach ($info as $item => &$pic){
+                        $response['path'] = $pic;
                         $pic = 'http://www.lionpush.com'.DS.'uploads/'.$pic;
+                        $pic_arr = array();
+                        $pic_arr['status'] = 'done';
+                        $pic_arr['uid'] = -$item;
+                        $pic_arr['name'] = $item.'pic';
+                        $pic_arr['url'] = $pic;
+                        $pic_arr['thumbUrl'] = $pic;
+                        $pic_arr['response'] = $response;
+                        $pic_info[] = $pic_arr;
                     }
+                    $info = $pic_info;
                 }
             }
             echo json_encode(array('code'=>40000,'data'=>$news_infos));die;
